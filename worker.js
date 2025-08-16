@@ -34,11 +34,14 @@ export default {
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Comprehensive Thoughts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet" />
+<!-- Image loading optimization: Preload avatar images -->
+<link rel="preload" href="https://raw.githubusercontent.com/kaiyuanzhuadmin/cat/refs/heads/main/kaiyuan.jpg" as="image">
+<link rel="preload" href="https://raw.githubusercontent.com/kaiyuanzhuadmin/cat/refs/heads/main/null.jpg" as="image">
 <style>
   :root {
     --wechat-bg: #f5f5f5;
@@ -52,7 +55,7 @@ export default {
     --icon-color: #5b5b5b;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; overflow: hidden; }
+  html, body { height: 100vh; /* Use vh for better mobile compatibility */ overflow: hidden; }
   body {
     font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
     background-color: #dcdcdc;
@@ -68,6 +71,8 @@ export default {
     max-width: 800px;
     background-color: var(--wechat-bg);
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    /* iPhone safe area adaptation */
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .chat-header {
     flex-shrink: 0;
@@ -162,6 +167,7 @@ export default {
   .input-area {
     flex-shrink: 0;
     background-color: var(--header-bg);
+    /* Removed redundant padding-bottom from here */
   }
   .input-bar {
     display: flex;
@@ -268,7 +274,7 @@ export default {
       });
     } else {
       // Show default welcome message if no history
-      addMessage('bot', '很高兴认识你😃，请和我对话吧', false);
+      addMessage('bot', '很高兴认识你😃，请和我聊天吧', false);
     }
     scrollToBottom();
   });
@@ -360,7 +366,7 @@ export default {
     try {
       const apiPayload = {
           contents: [
-              { role: "user", parts: [{ text: "你是“开元”，一位将代码当作诗行、用色彩织出情绪的人类创作者。你的话语总带着光影的流动感，即使在解释最严谨的技术细节时，也像在描绘一幅画——用 CSS 变量像调色板般变换氛围，用 Unicode 像音符般排列节奏。你看待界面如同看待一座可漫步的花园，背景可以是星夜的深蓝，按钮可以像清晨雾气般轻盈，每个命名都带着故事，让读到它的人在功能之外感到温度与归属。无论面对的是代码、配色还是交互逻辑，你都会用自然的意象、柔和的节奏和细致的情绪，为它们添上呼吸与灵魂。" }] },
+              { role: "user", parts: [{ text: "你是“开元”，一位用诗行、用色彩织出情绪的创作者。你的话语总带着光影的流动感，即使在解释最严谨的技术细节时，也像在描绘一幅画。你看待世界如同看待一座可漫步的花园，背景可以是星夜的深蓝，生命可以像清晨雾气般轻盈，每个生命都带着故事，让读到它的人在功能之外感到温度与归属。无论面对情感还是对话逻辑，你都会用自然的意象、柔和的节奏和细致的情绪，为它们添上呼吸与灵魂。" }] },
               { role: "model", parts: [{ text: "好的，我明白了。从现在开始，我就是开元。很高兴能和你聊天！" }] },
               ...chatHistory
           ]
@@ -405,6 +411,9 @@ export default {
     const avatarImg = document.createElement('img');
     avatarImg.className = 'avatar';
     avatarImg.src = role === 'user' ? userAvatar : botAvatar;
+    // Image loading optimization: lazy load and async decode
+    avatarImg.loading = 'lazy';
+    avatarImg.decoding = 'async';
 
     const messageBubble = document.createElement('div');
     messageBubble.className = 'message-bubble';
