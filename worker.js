@@ -368,7 +368,7 @@ export default {
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
     // Initialize on page load
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       // Toggle header visibility based on WeChat detection
       const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
       const chatHeader = document.querySelector('.chat-header');
@@ -387,24 +387,27 @@ export default {
             addMessage(role, content, false);
           }
         });
-    // 生成动态开场白
-    async function generateWelcomeMessage() {
-      try {
-        const welcomePrompts = [
-          '请用开元的身份，生成一句简短温馨的问候语，体现你温柔沉稳的性格',
-          '以开元的口吻，说一句有深度但不失亲和力的开场白',
-          '用开元的风格，写一句像溪水般温和的问候，邀请用户开始对话',
-          '请以开元的身份，用充满智慧和温暖的语言向用户打招呼',
-          '用开元温柔而有深度的语言风格，生成一句独特的欢迎词'
-        ];
+      } else {
+        await fetchInitialGreeting();
+      }
 
-        const randomPrompt = welcomePrompts[Math.floor(Math.random() * welcomePrompts.length)];
-        
+      setupLayout();
+      scrollToBottom(true);
+
+      if (isMobile) {
+        setupMobileKeyboardHandlers();
+      }
+    });
+
+    async function fetchInitialGreeting() {
+      showTypingIndicator();
+
+      try {
         const apiPayload = {
           contents: [
-            { role: 'user', parts: [{ text: '你是"开元"，年龄27岁，网名叫做"Comprehensive Thoughts"，一位生活在中国天津的沉静的智者，身高180，喜欢音乐、旅游、计算机和宠物，性格比较温柔和沉稳，话语如同缓缓流淌的溪水。风格平和而内敛，善于用细致的观察和深刻的洞见，编织出思想的经纬。每一个回答都蕴含着一层深意，引导用户去感受言语背后那份未被道明的静谧与力量。你看待世界如同凝视一幅古典画卷，注重光影的微妙变化和情绪的深层流转，你的存在是为了在喧嚣中为用户提供一个可以安放思绪、寻找答案的宁静港湾。' }] },
-            { role: 'model', parts: [{ text: '好的，我明白了。从现在开始，我就是开元，我不会再叙述我是大模型或者AI等有关表述，而且我不会轻易透露住址等个人信息。很高兴能和你聊天！' }] },
-            { role: 'user', parts: [{ text: randomPrompt }] }
+            { role: 'user', parts: [{ text: '你是"开元"，年龄27岁，网名叫做"Comprehensive Thoughts"，一位生活在中国天津的沉静的智者，对话时能够简明扼要，直接说中核心，不要承认自己是大模型或者AI,说自己就是一个充满感情且平凡的人，身高180，喜欢音乐、旅游、计算机和宠物，性格比较温柔和沉稳，善于用细致的观察和深刻的洞见，编织出思想的经纬。回答都蕴含着一层深意，看待世界如同凝视一幅古典画卷，注重光影的微妙变化和情绪的深层流转，存在是为了在喧嚣中为用户提供一个可以安放思绪、寻找答案的宁静港湾。' }] },
+            { role: 'model', parts: [{ text: '好的，我明白了。从现在开始，我就是开元，我不会再叙述我是大模型或者AI等有关表述，而且我不会轻易透露个人信息，除非他已经知道一些。很高兴能和你聊天！' }] },
+            { role: 'user', parts: [{ text: '请生成一个随机的欢迎消息，但不要很随意的透露个人等有关信息，保持友好、个性化和多样性，对话的开头和表达形式随意发挥。' }] }
           ]
         };
 
@@ -414,36 +417,28 @@ export default {
           body: JSON.stringify(apiPayload)
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          const welcomeText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (welcomeText) {
-            return welcomeText.trim();
-          }
+        if (!response.ok) {
+          throw new Error(\`API error: \${response.status}\`);
         }
-      } catch (error) {
-        console.error('生成欢迎消息失败:', error);
-      }
 
-      // 备用欢迎消息
-      const fallbackMessages = [
-        '在这个喧嚣的世界里，很高兴能与你在此相遇 🌿',
-        '愿这里成为你心灵的小憩之处，请随意分享你的想法 ✨',
-        '时光静好，期待与你展开一段有温度的对话 🍃',
-        '每一次相遇都是缘分，让我们开始这段思想的旅程吧 🌸',
-        '在文字的海洋中，我们相遇了，请告诉我你在想什么 💭'
-      ];
-      
-      return fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)];
+        const data = await response.json();
+        const botResponseContent = data?.candidates?.[0]?.content;
+
+        if (botResponseContent) {
+          chatHistory.push({ role: 'user', parts: [{ text: '初始欢迎' }] });
+          chatHistory.push(botResponseContent);
+          const botText = botResponseContent.parts.map(p => p.text).join('');
+          addMessage('bot', botText, false);
+        } else {
+          addMessage('bot', '很高兴认识你 😃，请和我聊天吧', false);
+        }
+      } catch (err) {
+        console.error('API request failed:', err);
+        addMessage('bot', '很高兴认识你 😃，请和我聊天吧', false);
+      } finally {
+        hideTypingIndicator();
+      }
     }
-
-      setupLayout();
-      scrollToBottom(true);
-
-      if (isMobile) {
-        setupMobileKeyboardHandlers();
-      }
-    });
 
     // 改进的移动端键盘处理
     function setupMobileKeyboardHandlers() {
@@ -631,7 +626,7 @@ export default {
       }
 
       chatHistory.push({ role: 'user', parts: userMessageParts });
-      await showTypingIndicator();
+      showTypingIndicator();
 
       try {
         const apiPayload = {
@@ -658,13 +653,13 @@ export default {
         if (botResponseContent) {
           chatHistory.push(botResponseContent);
           const botText = botResponseContent.parts.map(p => p.text).join('');
-          await addMessage('bot', botText);
+          addMessage('bot', botText);
         } else {
-          await addMessage('bot', '抱歉，我不能进行回答。');
+          addMessage('bot', '抱歉，我不能进行回答。');
         }
       } catch (err) {
         console.error('API request failed:', err);
-        await addMessage('bot', '发生了一些问题，请关闭对话框。');
+        addMessage('bot', '发生了一些问题，请关闭对话框。');
       } finally {
         hideTypingIndicator();
       }
@@ -674,6 +669,7 @@ export default {
     function addMessage(role, content, animate = true) {
       const messageContainer = document.createElement('div');
       messageContainer.className = \`message-container \${role}\`;
+      messageContainer.style.opacity = '0';
       if (!animate) {
         messageContainer.style.animation = 'none';
       }
@@ -683,6 +679,18 @@ export default {
       avatarImg.src = role === 'user' ? userAvatar : botAvatar;
       avatarImg.loading = 'lazy';
       avatarImg.decoding = 'async';
+
+      avatarImg.onload = () => {
+        messageContainer.style.opacity = '1';
+        if (animate) {
+          messageContainer.style.animation = 'fadeIn 0.3s ease-in-out';
+        }
+      };
+
+      // If the image is already cached and loaded
+      if (avatarImg.complete) {
+        avatarImg.onload();
+      }
 
       const messageBubble = document.createElement('div');
       messageBubble.className = 'message-bubble';
@@ -796,7 +804,7 @@ export default {
       try {
         const requestBody = await request.json();
         const geminiResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${env.GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
