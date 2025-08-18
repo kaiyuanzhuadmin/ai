@@ -25,6 +25,9 @@ export default {
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="icon" href="https://cat-8nk.pages.dev/me.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&display=swap" as="style" />
+  <link rel="preload" href="https://cat-8nk.pages.dev/kaiyuan.jpg" as="image" />
+  <link rel="preload" href="https://cat-8nk.pages.dev/null.jpg" as="image" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -38,296 +41,62 @@ export default {
       --icon-color: #5b5b5b;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      height: 100vh;
-      overflow: hidden;
-    }
+    html, body { height: 100vh; overflow: hidden; }
     body {
       font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
       background-color: var(--wechat-bg);
       color: var(--text-dark);
+      font-display: swap;
     }
-    .chat-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: var(--wechat-bg);
-      z-index: 0;
-    }
-    .chat-wrapper {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
-      max-width: 800px;
-      margin: 0 auto;
-      background-color: var(--wechat-bg);
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      padding-bottom: env(safe-area-inset-bottom, 0);
-    }
-    .chat-header {
-      position: fixed;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 800px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background-color: var(--header-bg);
-      border-bottom: 1px solid var(--border-color);
-      font-weight: 500;
-      color: var(--text-dark);
-      z-index: 100;
-      padding: 0 1rem;
-      min-height: 48px;
-    }
-    #chat-messages {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 800px;
-      overflow-y: auto;
-      background-color: var(--wechat-bg);
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      z-index: 1;
-      transition: bottom 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      /* Default positioning for WeChat (no header) */
-      top: 0;
-      bottom: 72px;
-    }
-    /* When header is visible (non-WeChat) */
-    body.has-header #chat-messages {
-      top: 48px;
-    }
-    .message-container {
-      display: flex;
-      margin-bottom: 1rem;
-      max-width: 80%;
-      animation: fadeIn 0.3s ease-in-out;
-    }
+    .chat-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--wechat-bg); z-index: 0; }
+    .chat-wrapper { position: relative; z-index: 1; display: flex; flex-direction: column; width: 100%; height: 100%; max-width: 800px; margin: 0 auto; background-color: var(--wechat-bg); box-shadow: 0 0 20px rgba(0,0,0,0.1); padding-bottom: env(safe-area-inset-bottom, 0); }
+    .chat-header { position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 800px; display: none; align-items: center; justify-content: center; background-color: var(--header-bg); border-bottom: 1px solid var(--border-color); font-weight: 500; color: var(--text-dark); z-index: 100; padding: 0 1rem; min-height: 48px; }
+    #chat-messages { position: fixed; left: 50%; transform: translateX(-50%); width: 100%; max-width: 800px; overflow-y: auto; background-color: var(--wechat-bg); padding: 1rem; display: flex; flex-direction: column; z-index: 1; transition: bottom 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; top: 0; bottom: 72px; }
+    body.has-header #chat-messages { top: 48px; }
+    .message-container { display: flex; margin-bottom: 1rem; max-width: 80%; animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .message-container.user { align-self: flex-end; flex-direction: row-reverse; }
     .message-container.bot { align-self: flex-start; }
     .avatar { width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0; }
-    .message-bubble {
-      padding: 10px 12px;
-      border-radius: 8px;
-      position: relative;
-      word-wrap: break-word;
-      line-height: 1.5;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
+    .message-bubble { padding: 10px 12px; border-radius: 8px; position: relative; word-wrap: break-word; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     .message-container.user .message-bubble { background-color: var(--bubble-user); color: var(--text-dark); margin-right: 12px; }
     .message-container.bot .message-bubble { background-color: var(--bubble-bot); color: var(--text-dark); margin-left: 12px; }
-    .message-bubble::before {
-      content: '';
-      position: absolute;
-      top: 13px;
-      width: 0;
-      height: 0;
-      border: 7px solid transparent;
-    }
+    .message-bubble::before { content: ''; position: absolute; top: 13px; width: 0; height: 0; border: 7px solid transparent; }
     .message-container.user .message-bubble::before { right: -14px; border-left-color: var(--bubble-user); }
     .message-container.bot .message-bubble::before { left: -14px; border-right-color: var(--bubble-bot); }
     .message-bubble img { max-width: 150px; height: auto; border-radius: 6px; display: block; }
-    
-    /* 格式化聊天内容样式 */
-    .message-bubble h1, .message-bubble h2, .message-bubble h3 {
-      font-weight: 600;
-      margin: 8px 0 4px 0;
-      line-height: 1.3;
-    }
+    .message-bubble h1, .message-bubble h2, .message-bubble h3 { font-weight: 600; margin: 8px 0 4px 0; line-height: 1.3; }
     .message-bubble h1 { font-size: 1.2em; color: #2c3e50; }
     .message-bubble h2 { font-size: 1.1em; color: #34495e; }
     .message-bubble h3 { font-size: 1.05em; color: #5d6d7e; }
-    
-    .message-bubble strong, .message-bubble b {
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    
-    .message-bubble em, .message-bubble i {
-      font-style: italic;
-      color: #7f8c8d;
-    }
-    
-    .message-bubble p {
-      margin: 6px 0;
-      line-height: 1.6;
-    }
-    
-    .message-bubble ul, .message-bubble ol {
-      margin: 8px 0;
-      padding-left: 20px;
-    }
-    
-    .message-bubble li {
-      margin: 4px 0;
-      line-height: 1.5;
-    }
-    
-    .message-bubble blockquote {
-      margin: 8px 0;
-      padding: 8px 12px;
-      border-left: 3px solid #3498db;
-      background-color: rgba(52, 152, 219, 0.1);
-      border-radius: 0 4px 4px 0;
-      font-style: italic;
-    }
-    
-    .message-bubble code {
-      background-color: #f8f9fa;
-      padding: 2px 4px;
-      border-radius: 3px;
-      font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
-      font-size: 0.9em;
-      color: #e74c3c;
-    }
-    
-    .message-bubble pre {
-      background-color: #f8f9fa;
-      padding: 10px;
-      border-radius: 6px;
-      overflow-x: auto;
-      margin: 8px 0;
-      border: 1px solid #e9ecef;
-    }
-    
-    .message-bubble pre code {
-      background: none;
-      padding: 0;
-      color: #2c3e50;
-    }
-    
-    .message-bubble a {
-      color: #3498db;
-      text-decoration: none;
-      border-bottom: 1px solid transparent;
-      transition: border-bottom-color 0.2s;
-    }
-    
-    .message-bubble a:hover {
-      border-bottom-color: #3498db;
-    }
-    
-    .message-bubble hr {
-      border: none;
-      height: 1px;
-      background: linear-gradient(to right, transparent, #bdc3c7, transparent);
-      margin: 12px 0;
-    }
-    
-    .typing-indicator {
-      display: flex;
-      align-items: center;
-      padding: 10px 12px;
-    }
-    .typing-indicator span {
-      height: 8px;
-      width: 8px;
-      margin: 0 2px;
-      background-color: #aaa;
-      border-radius: 50%;
-      display: inline-block;
-      animation: bounce 1.4s infinite ease-in-out both;
-    }
+    .message-bubble strong, .message-bubble b { font-weight: 600; color: #2c3e50; }
+    .message-bubble em, .message-bubble i { font-style: italic; color: #7f8c8d; }
+    .message-bubble p { margin: 6px 0; line-height: 1.6; }
+    .message-bubble ul, .message-bubble ol { margin: 8px 0; padding-left: 20px; }
+    .message-bubble li { margin: 4px 0; line-height: 1.5; }
+    .message-bubble blockquote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid #3498db; background-color: rgba(52, 152, 219, 0.1); border-radius: 0 4px 4px 0; font-style: italic; }
+    .message-bubble code { background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; font-family: 'Monaco', 'Consolas', 'Courier New', monospace; font-size: 0.9em; color: #e74c3c; }
+    .message-bubble pre { background-color: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto; margin: 8px 0; border: 1px solid #e9ecef; }
+    .message-bubble pre code { background: none; padding: 0; color: #2c3e50; }
+    .message-bubble a { color: #3498db; text-decoration: none; border-bottom: 1px solid transparent; transition: border-bottom-color 0.2s; }
+    .message-bubble a:hover { border-bottom-color: #3498db; }
+    .message-bubble hr { border: none; height: 1px; background: linear-gradient(to right, transparent, #bdc3c7, transparent); margin: 12px 0; }
+    .typing-indicator { display: flex; align-items: center; padding: 10px 12px; }
+    .typing-indicator span { height: 8px; width: 8px; margin: 0 2px; background-color: #aaa; border-radius: 50%; display: inline-block; animation: bounce 1.4s infinite ease-in-out both; }
     .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
     .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
     @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
-    
-    .input-area {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 0;
-      width: 100%;
-      max-width: 800px;
-      background-color: var(--header-bg);
-      border-top: 1px solid var(--border-color);
-      z-index: 100;
-      padding-bottom: calc(env(safe-area-inset-bottom, 0) + 0px);
-      transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-      will-change: transform;
-    }
-    .input-bar {
-      display: flex;
-      align-items: center;
-      padding: 8px;
-    }
-    #message-input {
-      flex-grow: 1;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      background-color: var(--input-bg);
-      font-size: 16px;
-      outline: none;
-      margin: 0 8px;
-      resize: none;
-    }
-    .icon-button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      /* 确保按钮可以被点击 */
-      pointer-events: auto;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
+    .input-area { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 800px; background-color: var(--header-bg); border-top: 1px solid var(--border-color); z-index: 100; padding-bottom: calc(env(safe-area-inset-bottom, 0) + 0px); transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); will-change: transform; }
+    .input-bar { display: flex; align-items: center; padding: 8px; }
+    #message-input { flex-grow: 1; border: none; padding: 10px; border-radius: 6px; background-color: var(--input-bg); font-size: 16px; outline: none; margin: 0 8px; resize: none; }
+    .icon-button { background: none; border: none; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; pointer-events: auto; -webkit-tap-highlight-color: transparent; user-select: none; }
     .icon-button svg { width: 28px; height: 28px; fill: var(--icon-color); }
     #file-input { display: none; }
-    #emoji-picker {
-      height: 240px;
-      background: var(--header-bg);
-      padding: 15px;
-      display: none;
-      grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
-      gap: 10px;
-      overflow-y: auto;
-      border-top: 1px solid var(--border-color);
-      opacity: 0;
-      transform: translateY(100%);
-      transition: opacity 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), 
-                  transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-    }
-    #emoji-picker.active { 
-      display: grid; 
-      opacity: 1;
-      transform: translateY(0);
-    }
-    #emoji-picker.show-animation {
-      display: grid;
-    }
+    #emoji-picker { height: 240px; background: var(--header-bg); padding: 15px; display: none; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 10px; overflow-y: auto; border-top: 1px solid var(--border-color); opacity: 0; transform: translateY(100%); transition: opacity 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); }
+    #emoji-picker.active { display: grid; opacity: 1; transform: translateY(0); }
+    #emoji-picker.show-animation { display: grid; }
     #emoji-picker span { cursor: pointer; font-size: 24px; text-align: center; }
-    #send-button {
-      background-color: #07c160;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 16px;
-      font-size: 16px;
-      cursor: pointer;
-      display: none;
-      /* 确保发送按钮可以被点击 */
-      pointer-events: auto;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
+    #send-button { background-color: #07c160; color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 16px; cursor: pointer; display: none; pointer-events: auto; -webkit-tap-highlight-color: transparent; user-select: none; }
   </style>
 </head>
 <body>
@@ -388,7 +157,7 @@ export default {
           }
         });
       } else {
-        await fetchInitialGreeting();
+        setTimeout(fetchInitialGreeting, 2000); // Delay bot's first message by 2 seconds
       }
 
       setupLayout();
@@ -611,7 +380,7 @@ export default {
       if (file) {
         try {
           const base64ImageData = await toBase64(file);
-          addMessage('user', \`<img src="\${base64ImageData}" alt="Uploaded image"/>\`);
+          addMessage('user', \`<img src="\${base64ImageData}" alt="Uploaded image" loading="lazy"/>\`);
           userMessageParts.push({
             inlineData: {
               mimeType: file.type,
